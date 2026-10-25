@@ -1,12 +1,13 @@
 # Changelog
 
-## 0.3.2 (preview)
+## 0.3.2
 
 - Arm an overlapped engine pipe before DLL startup, with nonblocking read completion checks during window/input tracking.
 - Require the DLL to connect and acknowledge startup before returning success; report Win32 startup errors and unexpected remote thread exit codes.
 - Update the launcher when the game window is found, and report missing acknowledgements or stalled hook initialization with bounded timeouts.
 - Delay MinHook initialization until BGI startup has completed. The supported adapter uses its seven engine hooks directly; generic GDI probes are reserved for diagnostic fallback.
-- Provide a small update for existing 0.3.1 installations. Direct Windows confirmation of this startup change is pending.
+- Provide full installer and portable downloads, plus a small update for existing 0.3.1 installations. The user has confirmed that the startup fix works on Windows.
+- Add a screenshot of the in-game Yomitan popup to the README.
 
 ## 0.3.1
 

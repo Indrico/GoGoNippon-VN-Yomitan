@@ -10,6 +10,12 @@ Learn Japanese while playing **Go! Go! Nippon! (2011)**. This Windows companion 
 
 The launcher, engine messages, installer, and documentation are in English. Japanese learning text stays in Japanese.
 
+## Screenshot
+
+![Yomitan dictionary popup over Japanese dialogue in Go! Go! Nippon!](https://raw.githubusercontent.com/Indrico/GoGoNippon-VN-Yomitan/main/docs/screenshots/image_1.png)
+
+Hold Shift while hovering over Japanese dialogue to open Yomitan's dictionary popup.
+
 ## Download
 
 Get the latest version from [Releases](https://github.com/Indrico/GoGoNippon-VN-Yomitan/releases/latest).
@@ -18,14 +24,15 @@ Get the latest version from [Releases](https://github.com/Indrico/GoGoNippon-VN-
 | --- | --- |
 | `GoGoNippon-Study-<version>-Windows-x64-Setup.exe` | Recommended: English installer with a Start menu shortcut. No separate Electron or Node.js installation needed. |
 | `GoGoNippon-Study-<version>-Windows-x64-Portable.7z` | Extract the entire archive, then run `GoGoNippon-Study.exe`. Use 7-Zip if your Windows archive tool cannot open it. |
+| `GoGoNippon-Study-0.3.2-Update-from-0.3.1.zip` | Small update for an existing complete 0.3.1 installation. See below. |
 | `GoGoNippon-Study-<version>-Source.zip` | Developer source and build scripts. Not needed to use the app. |
 | `SHA256SUMS.txt` | Download checksums. |
 
-### Startup fix preview for 0.3.1
+### Small update from 0.3.1
 
-If the game is visible but 0.3.1 remains on a window-waiting message and hover never starts, try the [0.3.2 preview update](https://github.com/Indrico/GoGoNippon-VN-Yomitan/releases/tag/v0.3.2). Close **both the launcher and BGI.exe**, then extract its `Update-from-0.3.1.zip` into your existing 0.3.1 launcher folder and merge/replace `resources`. Reopen the launcher and check its footer says **0.3.2**. Your imported dictionaries stay in the existing profile.
+Version [0.3.2](https://github.com/Indrico/GoGoNippon-VN-Yomitan/releases/tag/v0.3.2) fixes the startup case where the game is playable but the launcher keeps waiting for its window and hover never starts. The user has confirmed that the fix works on Windows.
 
-This preview changes DLL/pipe startup and reports the current attachment stage. It has been cross-compiled; direct Windows confirmation is pending. If it fails, export a fresh diagnostic ZIP from 0.3.2 so the startup result and failure stage are recorded.
+For an existing complete 0.3.1 installation, close **both the launcher and BGI.exe**, then extract `GoGoNippon-Study-0.3.2-Update-from-0.3.1.zip` into your existing launcher folder and merge/replace `resources`. Reopen the launcher and check its footer says **0.3.2**. Your imported dictionaries stay in the existing profile. For a fresh installation, use the full installer or portable archive.
 
 The runtime includes English and Japanese Chromium locales, stripped native binaries, the offline reading dictionary, and Yomitan. Solid LZMA compression reduces download size. The installed app still includes Electron, its largest component. Game files, diagnostic recordings, build tools, and source archives are excluded from the runtime.
 

@@ -55,7 +55,7 @@ subprocess.run([sys.executable, str(ROOT / 'scripts/fetch-dependencies.py'), '--
 source = DIST / f'{PREFIX}-Source.zip'
 base = Path(PREFIX + '-Source')
 with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-    for directory in ['src', 'scripts', 'assets', 'profiles', 'native', '.github', 'vendor/minhook-1.3.4']:
+    for directory in ['src', 'scripts', 'assets', 'docs/screenshots', 'profiles', 'native', '.github', 'vendor/minhook-1.3.4']:
         for file in sorted((ROOT / directory).rglob('*')):
             relative = file.relative_to(ROOT)
             if file.is_file() and not any(part in ['bin', 'obj', '__pycache__'] for part in relative.parts):

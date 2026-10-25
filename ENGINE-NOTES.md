@@ -59,9 +59,9 @@ The extension public key, app name, app ID, and partition `persist:gogonippon-yo
 
 ## Process lifecycle
 
-The 0.3.2 preview arms an overlapped pipe connection before calling the injected entry point. The DLL opens this pipe and sends an acknowledgement before `StudyStart` returns exactly `1`. Encoded Win32 startup errors and unexpected remote thread exit codes are reported by the helper. Overlapped reads keep window/input tracking responsive; missing initial data times out after 10 seconds and adapter readiness after 30 seconds.
+Version 0.3.2 arms an overlapped pipe connection before calling the injected entry point. The DLL opens this pipe and sends an acknowledgement before `StudyStart` returns exactly `1`. Encoded Win32 startup errors and unexpected remote thread exit codes are reported by the helper. Overlapped reads keep window/input tracking responsive; missing initial data times out after 10 seconds and adapter readiness after 30 seconds.
 
-The worker announces its start before touching MinHook, waits six seconds for BGI initialization, and then installs the dedicated engine sites. Generic GDI hooks are installed only for diagnostic fallback. A 0.3.1 Windows recording showed successful window tracking but no DLL/engine messages and no persistent engine detours; it did not identify which pre-message startup operation failed. The preview changes this startup path and adds observable stages. Direct Windows confirmation remains pending.
+The worker announces its start before touching MinHook, waits six seconds for BGI initialization, and then installs the dedicated engine sites. Generic GDI hooks are installed only for diagnostic fallback. A 0.3.1 Windows recording showed successful window tracking but no DLL/engine messages and no persistent engine detours; it did not identify which pre-message startup operation failed. Version 0.3.2 changes this startup path and adds observable stages. The user has confirmed that it now works with the Windows game.
 
 One instance owns the launcher lock; a second launch restores the existing window. Closing the launcher destroys its overlay/settings windows, stops the reading worker, flushes profile storage, and sends `quit` to the helper. An unresponsive helper is stopped by its own PID after a grace period. BGI and Steam keep running.
 
@@ -69,7 +69,7 @@ The DLL disables hooks on detach and keeps its hook storage resident, avoiding d
 
 ## Evidence and limits
 
-Windows recordings established ownership, foreign raster reuse, geometry, and the shorter lifetime of layout nodes compared with displayed text. The user confirmed the hover and Steam startup/shutdown fixes work. Private recordings, runtime dumps, screenshots, and game dialogue are excluded from the repository and release assets.
+Windows recordings established ownership, foreign raster reuse, geometry, and the shorter lifetime of layout nodes compared with displayed text. The user confirmed the hover, Steam startup/shutdown, and 0.3.2 attachment fixes work. Private diagnostic recordings, runtime dumps, and extracted game dialogue are excluded from the repository and release assets. The README includes the screenshot supplied by the user for publication.
 
 Existing replay checks exercise the actual ownership implementation against a user-supplied recording. Existing Electron checks cover dictionary import, popup rendering, persistence, furigana, reveal stability, and shutdown. Linux checks cannot establish untested Windows menu, save/load, backlog, fullscreen, or other revision behavior.
 
