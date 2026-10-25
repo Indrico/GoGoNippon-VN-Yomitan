@@ -21,6 +21,12 @@ Get the latest version from [Releases](https://github.com/Indrico/GoGoNippon-VN-
 | `GoGoNippon-Study-<version>-Source.zip` | Developer source and build scripts. Not needed to use the app. |
 | `SHA256SUMS.txt` | Download checksums. |
 
+### Startup fix preview for 0.3.1
+
+If the game is visible but 0.3.1 remains on a window-waiting message and hover never starts, try the [0.3.2 preview update](https://github.com/Indrico/GoGoNippon-VN-Yomitan/releases/tag/v0.3.2). Close **both the launcher and BGI.exe**, then extract its `Update-from-0.3.1.zip` into your existing 0.3.1 launcher folder and merge/replace `resources`. Reopen the launcher and check its footer says **0.3.2**. Your imported dictionaries stay in the existing profile.
+
+This preview changes DLL/pipe startup and reports the current attachment stage. It has been cross-compiled; direct Windows confirmation is pending. If it fails, export a fresh diagnostic ZIP from 0.3.2 so the startup result and failure stage are recorded.
+
 The runtime includes English and Japanese Chromium locales, stripped native binaries, the offline reading dictionary, and Yomitan. Solid LZMA compression reduces download size. The installed app still includes Electron, its largest component. Game files, diagnostic recordings, build tools, and source archives are excluded from the runtime.
 
 ## Requirements
@@ -89,6 +95,13 @@ npm run vendor
 npm run build:native
 npm run package:dist
 npm run package:release
+```
+
+For a small update build using an already installed compatible runtime:
+
+```bash
+npm run package:win
+npm run package:release:update
 ```
 
 Output is written to `dist/`. `package:win` builds just the unpacked runtime. `package:release` collects corresponding source and generates checksums for the current version. The manually triggered [release build workflow](.github/workflows/build.yml) performs the same build and uploads artifacts without publishing a release.

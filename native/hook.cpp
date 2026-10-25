@@ -11,7 +11,6 @@
 #include <set>
 #include <cstring>
 
-static HMODULE selfModule;
 static uintptr_t imageBase;
 static DWORD imageSize;
 static std::atomic<bool> running{false};
@@ -39,6 +38,13 @@ static bool emit(std::string message) {
 }
 static void status(const std::string& message, const std::string& detail = "") {
   emit("{\"type\":\"status\",\"message\":" + quote(message) + ",\"detail\":" + quote(detail) + "}");
+}
+static bool startupStatus(HANDLE pipe, const std::string& message, const std::string& detail = "") {
+  const auto line = "{\"type\":\"status\",\"message\":" + quote(message) + ",\"detail\":" + quote(detail) + "}\n";
+  DWORD written = 0;
+  if (!WriteFile(pipe, line.data(), line.size(), &written, nullptr)) return false;
+  if (written != line.size()) { SetLastError(ERROR_WRITE_FAULT); return false; }
+  return true;
 }
 static bool japanese(const std::wstring& text) {
   return std::any_of(text.begin(), text.end(), [](wchar_t c) { return (c >= 0x3040 && c <= 0x30ff) || (c >= 0x3400 && c <= 0x9fff); });
@@ -546,28 +552,23 @@ static void inspectCandidates() {
   }
   emit("{\"type\":\"candidate-scan\",\"count\":" + std::to_string(count) + "}");
 }
-static DWORD WINAPI run(void*) {
-  HANDLE pipe = INVALID_HANDLE_VALUE;
-  for (unsigned i = 0; i < 100; ++i) {
-    pipe = CreateFileW(configuration.pipe, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
-    if (pipe != INVALID_HANDLE_VALUE) break;
-    Sleep(50);
-  }
-  if (pipe == INVALID_HANDLE_VALUE) { running = false; FreeLibraryAndExitThread(selfModule, 1); }
-  MH_STATUS initialized = MH_Initialize();
-  if (initialized != MH_OK && initialized != MH_ERROR_ALREADY_INITIALIZED) {
-    const std::string line = "{\"type\":\"status\",\"message\":\"MinHook could not be initialized.\"}\n";
-    DWORD written; WriteFile(pipe, line.data(), line.size(), &written, nullptr); CloseHandle(pipe); running = false; FreeLibraryAndExitThread(selfModule, 1);
-  }
-  auto* dos = reinterpret_cast<IMAGE_DOS_HEADER*>(imageBase);
-  auto* nt = reinterpret_cast<IMAGE_NT_HEADERS32*>(imageBase + dos->e_lfanew);
-  imageSize = nt->OptionalHeader.SizeOfImage;
+static void installGdiProbes() {
+  // Generic GDI probes are a fallback for unknown engines. The verified BGI
+  // adapter gets its text and geometry directly from its seven engine sites.
   const auto a = MH_CreateHookApi(L"gdi32.dll", "TextOutA", reinterpret_cast<void*>(hookTextOutA), reinterpret_cast<void**>(&originalTextOutA));
   const auto w = MH_CreateHookApi(L"gdi32.dll", "TextOutW", reinterpret_cast<void*>(hookTextOutW), reinterpret_cast<void**>(&originalTextOutW));
   if (a == MH_OK || a == MH_ERROR_ALREADY_CREATED) MH_EnableHook(reinterpret_cast<void*>(TextOutA));
   if (w == MH_OK || w == MH_ERROR_ALREADY_CREATED) MH_EnableHook(reinterpret_cast<void*>(TextOutW));
   if (a != MH_OK && a != MH_ERROR_ALREADY_CREATED && w != MH_OK && w != MH_ERROR_ALREADY_CREATED) status("The GDI probe could not be installed.", MH_StatusToString(a));
-  status("Waiting for the BGI engine to initialize…", "The text hook is installed after the engine code loads, usually in about six seconds.");
+}
+static DWORD WINAPI run(void* parameter) {
+  const HANDLE pipe = static_cast<HANDLE>(parameter);
+  if (!startupStatus(pipe, "Engine worker started; waiting for BGI initialization…", "Text hooks will be installed in about six seconds.")) {
+    CloseHandle(pipe); running = false; return 1;
+  }
+  auto* dos = reinterpret_cast<IMAGE_DOS_HEADER*>(imageBase);
+  auto* nt = reinterpret_cast<IMAGE_NT_HEADERS32*>(imageBase + dos->e_lfanew);
+  imageSize = nt->OptionalHeader.SizeOfImage;
   GameWindowGeometry geometry;
   EnumWindows(inspectGameWindow, reinterpret_cast<LPARAM>(&geometry));
   emit("{\"type\":\"engine-window-geometry\",\"probeVersion\":2,\"width\":" + std::to_string(geometry.client.right) +
@@ -581,11 +582,19 @@ static DWORD WINAPI run(void*) {
     // Delay profile resolution and parser inspection until the executable's
     // normal startup has had a chance to unpack its code.
     if (!scanned && GetTickCount64() - started > 6000) {
+      if (!startupStatus(pipe, "Installing BGI text hooks…", "Initializing the hook library after engine startup.")) break;
+      const auto initialized = MH_Initialize();
+      if (initialized != MH_OK && initialized != MH_ERROR_ALREADY_INITIALIZED) {
+        startupStatus(pipe, "MinHook could not be initialized.", MH_StatusToString(initialized));
+        break;
+      }
       profileInstalled = installProfile();
       if (!profileInstalled && !installKnownLayoutProbes()) {
+        installGdiProbes();
         inspectCandidates();
         status("The engine signatures do not match.", "Diagnostic mode is active. Export diagnostics to inspect this engine version.");
       }
+      emit(std::string("{\"type\":\"adapter-ready\",\"live\":") + (verifiedProfile || liveAdapter ? "true" : "false") + "}");
       scanned = true;
     }
     if (GetTickCount64() - lastPublished >= 30) {
@@ -618,22 +627,37 @@ static DWORD WINAPI run(void*) {
 }
 extern "C" __declspec(dllexport) DWORD WINAPI StudyStart(StudyInit* remote) {
   StudyInit init{};
-  if (!readMemory(remote, &init, sizeof(init)) || init.size != sizeof(init)) return 0;
+  if (!readMemory(remote, &init, sizeof(init)) || init.size != sizeof(init)) return studyStartFailure(ERROR_INVALID_PARAMETER);
   bool expected = false;
-  if (!running.compare_exchange_strong(expected, true)) return 0;
+  if (!running.compare_exchange_strong(expected, true)) return studyStartFailure(ERROR_ALREADY_EXISTS);
   // Keep existing trampolines resident and re-enable them on reattachment;
   // an in-flight game call can still be using one after a detach.
   configuration = init;
   sampleCount = 0; layoutSamples = 0; blitSamples = 0; clearSamples = 0; verifiedProfile = false; liveAdapter = false;
   { std::lock_guard<std::mutex> lock(rasterMutex); rasterGlyphs.clear(); liveLayouts = study::LayoutStore{}; }
   { std::lock_guard<std::mutex> lock(queueMutex); queue.clear(); }
-  HANDLE thread = CreateThread(nullptr, 0, run, nullptr, 0, nullptr);
-  if (!thread) { running = false; return 0; }
+  // Establish IPC before reporting a successful remote entry point. The old
+  // entry returned 1 even if its worker later failed to open the pipe.
+  HANDLE pipe = INVALID_HANDLE_VALUE;
+  DWORD pipeError = ERROR_FILE_NOT_FOUND;
+  for (unsigned attempt = 0; attempt < 100; ++attempt) {
+    pipe = CreateFileW(configuration.pipe, GENERIC_READ | GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    if (pipe != INVALID_HANDLE_VALUE) break;
+    pipeError = GetLastError();
+    if (pipeError != ERROR_FILE_NOT_FOUND && pipeError != ERROR_PIPE_BUSY) break;
+    Sleep(50);
+  }
+  if (pipe == INVALID_HANDLE_VALUE) { running = false; return studyStartFailure(pipeError); }
+  if (!startupStatus(pipe, "Engine connection established.", "Waiting for the hook worker to start.")) {
+    const auto error = GetLastError(); CloseHandle(pipe); running = false; return studyStartFailure(error);
+  }
+  HANDLE thread = CreateThread(nullptr, 0, run, pipe, 0, nullptr);
+  if (!thread) { const auto error = GetLastError(); CloseHandle(pipe); running = false; return studyStartFailure(error); }
   CloseHandle(thread); return 1;
 }
 BOOL WINAPI DllMain(HINSTANCE module, DWORD reason, LPVOID) {
   if (reason == DLL_PROCESS_ATTACH) {
-    selfModule = module; imageBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)); DisableThreadLibraryCalls(module);
+    imageBase = reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr)); DisableThreadLibraryCalls(module);
   }
   return TRUE;
 }

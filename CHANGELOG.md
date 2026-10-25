@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2 (preview)
+
+- Arm an overlapped engine pipe before DLL startup, with nonblocking read completion checks during window/input tracking.
+- Require the DLL to connect and acknowledge startup before returning success; report Win32 startup errors and unexpected remote thread exit codes.
+- Update the launcher when the game window is found, and report missing acknowledgements or stalled hook initialization with bounded timeouts.
+- Delay MinHook initialization until BGI startup has completed. The supported adapter uses its seven engine hooks directly; generic GDI probes are reserved for diagnostic fallback.
+- Provide a small update for existing 0.3.1 installations. Direct Windows confirmation of this startup change is pending.
+
 ## 0.3.1
 
 - Provide a small update ZIP for the existing 0.2.2 Windows distribution, with corresponding source as a separate download.

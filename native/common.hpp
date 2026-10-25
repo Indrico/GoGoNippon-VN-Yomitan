@@ -17,6 +17,9 @@ struct StudyInit {
   wchar_t directory[1024];
   wchar_t profile[1024];
 };
+// StudyStart returns exactly 1 on success, or an encoded Win32 startup error.
+constexpr DWORD studyStartError = 0xe1000000;
+inline DWORD studyStartFailure(DWORD error) { return studyStartError | (error & 0xffff); }
 inline std::string utf8(const std::wstring& value) {
   if (value.empty()) return {};
   int n = WideCharToMultiByte(CP_UTF8, 0, value.data(), static_cast<int>(value.size()), nullptr, 0, nullptr, nullptr);

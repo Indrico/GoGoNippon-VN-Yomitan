@@ -59,6 +59,10 @@ The extension public key, app name, app ID, and partition `persist:gogonippon-yo
 
 ## Process lifecycle
 
+The 0.3.2 preview arms an overlapped pipe connection before calling the injected entry point. The DLL opens this pipe and sends an acknowledgement before `StudyStart` returns exactly `1`. Encoded Win32 startup errors and unexpected remote thread exit codes are reported by the helper. Overlapped reads keep window/input tracking responsive; missing initial data times out after 10 seconds and adapter readiness after 30 seconds.
+
+The worker announces its start before touching MinHook, waits six seconds for BGI initialization, and then installs the dedicated engine sites. Generic GDI hooks are installed only for diagnostic fallback. A 0.3.1 Windows recording showed successful window tracking but no DLL/engine messages and no persistent engine detours; it did not identify which pre-message startup operation failed. The preview changes this startup path and adds observable stages. Direct Windows confirmation remains pending.
+
 One instance owns the launcher lock; a second launch restores the existing window. Closing the launcher destroys its overlay/settings windows, stops the reading worker, flushes profile storage, and sends `quit` to the helper. An unresponsive helper is stopped by its own PID after a grace period. BGI and Steam keep running.
 
 The DLL disables hooks on detach and keeps its hook storage resident, avoiding deallocation while game threads may still return through a trampoline. The game can be reattached without replacing its executable.

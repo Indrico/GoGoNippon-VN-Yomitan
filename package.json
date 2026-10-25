@@ -1,6 +1,6 @@
 {
   "name": "gogonippon-yomitan",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Yomitan dictionary lookup and offline hover furigana for Go! Go! Nippon! (2011)",
   "main": "src/main.cjs",
@@ -14,7 +14,8 @@
     "check:lifecycle": "node scripts/check-lifecycle.cjs",
     "package:win": "electron-builder --win dir --x64 --publish never",
     "package:release": "python3 scripts/package-release.py",
-    "package:dist": "node scripts/build-windows.cjs"
+    "package:dist": "node scripts/build-windows.cjs",
+    "package:release:update": "python3 scripts/package-release.py --update-only"
   },
   "dependencies": {
     "kuromoji": "0.1.2"

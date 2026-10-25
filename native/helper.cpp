@@ -1,4 +1,5 @@
 #include "common.hpp"
+#include "engine-pipe.hpp"
 #include <tlhelp32.h>
 #include <shellapi.h>
 #include <atomic>
@@ -167,11 +168,14 @@ static bool inject(const std::wstring& dll, const StudyInit& init) {
   wait = WaitForSingleObject(thread, 10000);
   DWORD result = 0;
   if (wait == WAIT_OBJECT_0) GetExitCodeThread(thread, &result);
+  emit("{\"type\":\"hook-start-result\",\"waitResult\":" + std::to_string(wait) + ",\"exitCode\":" + std::to_string(result) + "}");
   CloseHandle(thread);
   if (wait == WAIT_OBJECT_0) VirtualFreeEx(targetProcess, remoteInit, 0, MEM_RELEASE);
   if (wait != WAIT_OBJECT_0) SetLastError(ERROR_TIMEOUT);
-  else if (!result) SetLastError(ERROR_ALREADY_EXISTS);
-  return wait == WAIT_OBJECT_0 && result != 0;
+  else if ((result & 0xffff0000) == studyStartError) SetLastError(result & 0xffff);
+  else if (!result) SetLastError(ERROR_ALREADY_EXISTS); // Older resident DLL.
+  else if (result != 1) SetLastError(ERROR_DLL_INIT_FAILED);
+  return wait == WAIT_OBJECT_0 && result == 1;
 }
 int wmain(int argc, wchar_t** argv) {
   SetConsoleOutputCP(CP_UTF8);
@@ -234,29 +238,46 @@ int wmain(int argc, wchar_t** argv) {
   targetProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION | PROCESS_CREATE_THREAD | SYNCHRONIZE, FALSE, targetPid);
   if (!targetProcess) { status("The game process could not be accessed.", errorMessage()); return 5; }
   const std::wstring pipeName = L"\\\\.\\pipe\\gogonippon-study-" + std::to_wstring(targetPid) + L"-" + std::to_wstring(GetCurrentProcessId());
-  HANDLE pipe = CreateNamedPipeW(pipeName.c_str(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_NOWAIT | PIPE_REJECT_REMOTE_CLIENTS, 1, 65536, 65536, 0, nullptr);
-  if (pipe == INVALID_HANDLE_VALUE) { status("The integration pipe could not be created.", errorMessage()); CloseHandle(targetProcess); return 6; }
+  EnginePipe pipe;
+  if (!pipe.open(pipeName)) { status("The integration pipe could not be created.", errorMessage()); CloseHandle(targetProcess); return 6; }
   StudyInit init{}; init.size = sizeof(init);
   wcsncpy(init.pipe, pipeName.c_str(), 127); wcsncpy(init.directory, directory.c_str(), 1023); wcsncpy(init.profile, profile.c_str(), 1023);
   if (!inject(dll, init)) {
     const auto error = GetLastError();
     status("The engine hook could not be loaded.", error == ERROR_ALREADY_EXISTS ? "The game is connected to another launcher. Close that launcher or restart the game, then reconnect." : errorMessage(error));
-    CloseHandle(pipe); CloseHandle(targetProcess); return 7;
+    CloseHandle(targetProcess); return 7;
   }
+  status("The game is connected; waiting for the engine adapter…", "The engine connection must send its startup acknowledgement before hover can become active.");
   snapshotCode();
-  bool connected = false, automaticSnapshot = false; ULONGLONG lastSnapshot = GetTickCount64();
+  bool receivedEngineData = false, adapterReady = false, communicationFailed = false, automaticSnapshot = false;
+  ULONGLONG lastSnapshot = GetTickCount64(), startupDeadline = GetTickCount64() + 10000;
   RECT previousGeometry{};
   std::string pending;
   while (!done && WaitForSingleObject(targetProcess, 0) == WAIT_TIMEOUT) {
-    if (!connected) connected = ConnectNamedPipe(pipe, nullptr) || GetLastError() == ERROR_PIPE_CONNECTED;
-    if (connected) {
-      char buffer[65536]; DWORD count = 0;
-      if (ReadFile(pipe, buffer, sizeof(buffer), &count, nullptr) && count) {
-        pending.append(buffer, count);
-        size_t end;
-        while ((end = pending.find('\n')) != std::string::npos) { emit(pending.substr(0, end)); pending.erase(0, end + 1); }
-        if (pending.size() > 1024 * 1024) pending.clear();
+    std::string chunk; DWORD pipeError = ERROR_SUCCESS;
+    if (!pipe.poll(chunk, pipeError)) {
+      emit("{\"type\":\"engine-pipe-error\",\"code\":" + std::to_string(pipeError) + "}");
+      status("The engine connection closed.", errorMessage(pipeError) + " Close the game and launcher, reopen them, and export diagnostics if this repeats.");
+      communicationFailed = true; break;
+    }
+    if (!chunk.empty()) {
+      receivedEngineData = true;
+      pending += chunk;
+      size_t end;
+      while ((end = pending.find('\n')) != std::string::npos) {
+        const auto line = pending.substr(0, end);
+        if (line.rfind("{\"type\":\"adapter-ready\",", 0) == 0) adapterReady = true;
+        emit(line); pending.erase(0, end + 1);
       }
+      if (pending.size() > 1024 * 1024) pending.clear();
+    }
+    if (!receivedEngineData && GetTickCount64() > startupDeadline) {
+      status("The engine adapter did not acknowledge startup.", "The window was found, but the hook sent no data. Close both the game and launcher before reconnecting, then export diagnostics if this repeats.");
+      communicationFailed = true; break;
+    }
+    if (!adapterReady && GetTickCount64() > startupDeadline + 20000) {
+      status("The text hook did not finish initialization.", "The game window is connected, but the adapter did not become ready within 30 seconds. Export diagnostics to inspect the startup stage.");
+      communicationFailed = true; break;
     }
     if (!IsWindow(targetWindow)) {
       GameMatch replacement; replacement.pid = targetPid;
@@ -283,6 +304,7 @@ int wmain(int argc, wchar_t** argv) {
     }
     Sleep(25);
   }
-  if (connected) { const char command[] = "quit\n"; DWORD written; WriteFile(pipe, command, sizeof(command) - 1, &written, nullptr); Sleep(200); }
-  CloseHandle(pipe); CloseHandle(targetProcess); return 0;
+  // Closing the server wakes the DLL's pipe checks so it disables its hooks.
+  pipe.close(); Sleep(200);
+  CloseHandle(targetProcess); return communicationFailed ? 8 : 0;
 }

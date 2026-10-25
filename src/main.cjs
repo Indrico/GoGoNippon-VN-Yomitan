@@ -151,6 +151,7 @@ function onNative(message) {
   if (message.type === 'frame') { updateFrame(message); return; }
   log(message);
   if (message.type === 'status') status(message.message, message.detail || '');
+  else if (message.type === 'game-connected') status('Game window found. Starting the engine adapter…', message.path || '');
   else if (message.type === 'clear') { page++; clearDialogue(); }
   else if (message.type === 'dialogue') {
     // The native adapter sends a complete snapshot; sequence is session-local
