@@ -2,6 +2,7 @@
 
 ## 0.3.1
 
+- Provide a small update ZIP for the existing 0.2.2 Windows distribution, with corresponding source as a separate download.
 - Build the standard NSIS installer on Linux using Electron Builder's bundled uninstaller reader, without requiring Wine.
 - Omit unused development variants of the JavaScript compression library.
 - Clarify that both the launcher and game must be closed before replacing the native DLL during updates.

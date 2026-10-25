@@ -14,6 +14,34 @@ PREFIX = f'GoGoNippon-Study-{VERSION}'
 assets = [DIST / f'{PREFIX}-Windows-x64-Setup.exe', DIST / f'{PREFIX}-Windows-x64-Portable.7z']
 if not all(file.is_file() for file in assets):
     raise SystemExit('Run npm run package:dist first.')
+# A one-time upgrade from the confirmed 0.2.2 distribution. Its Electron,
+# extension, dictionary assets and stable profile identity are unchanged.
+if VERSION == '0.3.1':
+    update = DIST / f'{PREFIX}-Update-from-0.2.2.zip'
+    with zipfile.ZipFile(update, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for filename in ['resources/app.asar', 'resources/native/study-helper.exe', 'resources/native/study-hook.dll', 'resources/profiles/bgi-1.528.ini']:
+            archive.write(DIST / 'win-unpacked' / filename, filename)
+        for filename in ['LICENSE', 'THIRD_PARTY.md']:
+            archive.write(ROOT / filename, filename)
+        archive.writestr('UPDATE.txt', '''GoGoNippon Study 0.3.1 - update from 0.2.2 only
+
+Use this ZIP only with the complete official GoGoNippon Study 0.2.2
+Windows distribution (Electron 37.10.3, Yomitan 26.10.12.0).
+For a fresh install, use the full Setup.exe or Portable.7z instead.
+
+1. Close both the launcher and BGI.exe to release the loaded native DLL.
+2. Extract this ZIP into the existing launcher folder, beside
+   GoGoNippon-Study.exe. Merge resources and replace matching files.
+3. Run the existing GoGoNippon-Study.exe. The footer should show 0.3.1.
+
+Your game path, settings and imported dictionaries remain in
+%APPDATA%\\gogonippon-yomitan. This update does not replace Electron or
+prune the old installation's locales, so its disk footprint stays similar.
+
+Corresponding source and full packages:
+https://github.com/Indrico/GoGoNippon-VN-Yomitan/releases/tag/v0.3.1
+''')
+    assets.append(update)
 subprocess.run([sys.executable, str(ROOT / 'scripts/fetch-dependencies.py'), '--source'], check=True)
 source = DIST / f'{PREFIX}-Source.zip'
 base = Path(PREFIX + '-Source')
