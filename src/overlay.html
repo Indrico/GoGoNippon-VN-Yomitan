@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="ja" data-gogonippon="overlay">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' chrome-extension:; script-src 'self' chrome-extension:; style-src 'self' 'unsafe-inline' chrome-extension:; frame-src chrome-extension:; img-src 'self' data: chrome-extension:">
+<title>GoGoNippon Study Overlay</title><link rel="stylesheet" href="overlay.css"></head>
+<body><div id="demo-scene" hidden><div class="demo-title">日本語を、物語といっしょに。</div><div class="demo-dialogue"></div><p>Demo · Hover for furigana · Shift + hover for Yomitan · Escape to close</p></div>
+<div id="glyphs" lang="ja"></div><div id="furigana" class="scan-disable" aria-hidden="true" hidden></div><div id="lookup-status" class="scan-disable" hidden>Yomitan is not ready. Open Yomitan Settings and import a dictionary first.</div>
+<script type="module" src="overlay.mjs"></script></body></html>

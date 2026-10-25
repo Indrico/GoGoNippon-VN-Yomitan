@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'">
+<title>GoGoNippon Study</title><link rel="stylesheet" href="launcher.css"></head>
+<body><main>
+  <p class="eyebrow">GO! GO! NIPPON! · 日本語</p>
+  <h1>Learn as you play.</h1>
+  <p class="intro">Hover over a word to see its reading.<br>Hold <kbd>Shift</kbd> while hovering to open Yomitan.</p>
+  <section class="card">
+    <div class="label">GAME</div><p id="game-path">Looking for BGI.exe…</p>
+    <div class="buttons"><button data-action="launch" class="primary">Launch Game</button><button data-action="choose">Choose BGI.exe</button></div>
+    <p class="hint">Use windowed or borderless mode. You can also connect to a game that is already running.</p>
+  </section>
+  <section class="card">
+    <div class="label">DICTIONARIES & READINGS</div>
+    <div class="buttons"><button data-action="settings">Yomitan Settings</button><button data-action="demo">Try Demo</button></div>
+    <p class="hint">Import your Yomitan settings and dictionary ZIPs once in Yomitan Settings. Furigana works offline.</p>
+  </section>
+  <section class="card"><div class="label">STATUS</div><p id="status" role="status">Preparing application…</p><p id="detail" class="hint"></p>
+    <div class="buttons"><button data-action="snapshot">Capture Diagnostics</button><button data-action="export">Export Diagnostics</button><button data-action="stop">Disconnect</button></div>
+  </section>
+  <p class="footer"><span id="app-version"></span> · Automatic readings may be incorrect for names and ambiguous words. Check them in the dictionary.</p>
+</main><script src="launcher.js"></script></body></html>

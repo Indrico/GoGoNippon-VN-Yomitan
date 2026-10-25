@@ -1,0 +1,8 @@
+# Third-party components
+
+- **Yomitan 26.10.12.0** — GPL-3.0-or-later. Source/release: https://github.com/yomidevs/yomitan/releases/tag/26.10.12.0. The unpacked extension ships in `resources/yomitan`, including upstream notices. Changes are reproducibly applied by `scripts/prepare-vendor.cjs`: stable extension identity, instance-specific Shift lookup, popup visibility, direct extension popup URL, and Electron permissions/onboarding compatibility. `GOGONIPPON-SOURCE.json` records the downloaded archive checksum. The release's source companion includes the upstream source archive, exact modified files, and integration build scripts. Unchanged generated assets are obtained from the checksum-verified Chrome release during a build.
+- **MinHook v1.3.4** — BSD 2-Clause; HDE portions retain their own BSD notices. https://github.com/TsudaKageyu/minhook/tree/v1.3.4. Compiled into the x86 DLL. Original license and notices are shipped under `resources/licenses/minhook` and source is included in the companion archive.
+- **kuromoji.js 0.1.2** — Apache-2.0, with bundled dictionary notices. https://github.com/takuyaa/kuromoji.js. Runtime package, dictionary, LICENSE-2.0.txt, and NOTICE.md are included with the application.
+- **Electron 37.10.3** — MIT and bundled Chromium/third-party licenses. https://github.com/electron/electron/releases/tag/v37.10.3. Distribution includes Electron's LICENSE and LICENSES.chromium.html.
+
+Game executable, scripts, graphics, music, and save data are not redistributed by this integration. The integration source and modifications to Yomitan are distributed under GPL-3.0-or-later; see LICENSE.
