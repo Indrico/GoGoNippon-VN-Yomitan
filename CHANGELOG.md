@@ -8,6 +8,7 @@
 - Delay MinHook initialization until BGI startup has completed. The supported adapter uses its seven engine hooks directly; generic GDI probes are reserved for diagnostic fallback.
 - Provide full installer and portable downloads, plus a small update for existing 0.3.1 installations. The user has confirmed that the startup fix works on Windows.
 - Add a screenshot of the in-game Yomitan popup to the README.
+- Add an agent guide covering the architecture, confirmed fixes, persistent profiles, and release process.
 
 ## 0.3.1
 

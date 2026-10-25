@@ -60,7 +60,7 @@ with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as arch
             relative = file.relative_to(ROOT)
             if file.is_file() and not any(part in ['bin', 'obj', '__pycache__'] for part in relative.parts):
                 archive.write(file, base / relative)
-    for filename in ['package.json', 'package-lock.json', 'README.md', 'ENGINE-NOTES.md', 'CHANGELOG.md', 'THIRD_PARTY.md', 'LICENSE', '.gitignore', '.gitattributes']:
+    for filename in ['package.json', 'package-lock.json', 'README.md', 'AGENTS.md', 'ENGINE-NOTES.md', 'CHANGELOG.md', 'THIRD_PARTY.md', 'LICENSE', '.gitignore', '.gitattributes']:
         archive.write(ROOT / filename, base / filename)
     # Preferred upstream source plus exact changed files; avoid duplicating
     # fonts, WASM and other unchanged generated assets from the Chrome package.
