@@ -17,11 +17,11 @@ jobs:
           node-version: '24'
           cache: npm
       - name: Install x86 Windows toolchain
-        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-i686-posix gcc-mingw-w64-i686-posix xvfb
+        run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-i686-posix gcc-mingw-w64-i686-posix
       - run: npm ci
       - run: npm run vendor
       - run: npm run build:native
-      - run: xvfb-run -a npm run package:dist
+      - run: npm run package:dist
       - run: npm run package:release
       - uses: actions/upload-artifact@v4
         with:

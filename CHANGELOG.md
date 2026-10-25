@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Build the standard NSIS installer on Linux using Electron Builder's bundled uninstaller reader, without requiring Wine.
+- Omit unused development variants of the JavaScript compression library.
+- Clarify that both the launcher and game must be closed before replacing the native DLL during updates.
+
 ## 0.3.0
 
 - Publish the integration source and reproducible release build scripts.

@@ -56,7 +56,7 @@ Furigana is generated offline by Kuromoji. Readings for names and ambiguous word
 
 ## Updating and stored data
 
-Close the old launcher before updating. Install the new version, or extract the portable release into a new folder. The application identity and extension key remain stable, so both distributions use your existing data at:
+Close both the old launcher and the game before updating, so Windows can release the native DLL. Install the new version, or extract the portable release into a new folder. The application identity and extension key remain stable, so both distributions use your existing data at:
 
 ```text
 %APPDATA%\gogonippon-yomitan
@@ -81,17 +81,19 @@ The main dialogue path and launcher fixes have been confirmed by the user on Win
 
 ## Build from source
 
-The build below targets Windows from Linux. Requirements: Node.js 22.23.4+ or 24, npm, Python 3.12+, x86 MinGW, and Xvfb for the installer build. On Ubuntu, install `g++-mingw-w64-i686-posix`, `gcc-mingw-w64-i686-posix`, and `xvfb`. Electron Builder downloads its pinned Wine toolset to generate the installer; these build tools are not shipped with the app. Native compilation and portable packaging do not need Wine.
+The build below targets Windows from Linux without Wine. Requirements: Node.js 22.23.4+ or 24, npm, Python 3.12+, and x86 MinGW. On Ubuntu, install `g++-mingw-w64-i686-posix` and `gcc-mingw-w64-i686-posix`.
 
 ```bash
 npm ci
 npm run vendor
 npm run build:native
-xvfb-run -a npm run package:dist
+npm run package:dist
 npm run package:release
 ```
 
 Output is written to `dist/`. `package:win` builds just the unpacked runtime. `package:release` collects corresponding source and generates checksums for the current version. The manually triggered [release build workflow](.github/workflows/build.yml) performs the same build and uploads artifacts without publishing a release.
+
+On Linux, `scripts/build-windows.cjs` uses Electron Builder's bundled NSIS uninstaller reader instead of executing its temporary Windows stub through Wine. This small integration is guarded against the pinned Electron Builder version. The app uses the standard NSIS installer and uninstaller templates.
 
 Dependency versions and archive checksums are pinned. `npm run vendor` verifies Yomitan **26.10.12.0** and MinHook **1.3.4**, then applies the Electron changes. Keep `assets/extension-key.txt`: it is a public key providing a stable extension identity for existing dictionaries.
 

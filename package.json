@@ -1,6 +1,6 @@
 {
   "name": "gogonippon-yomitan",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "description": "Yomitan dictionary lookup and offline hover furigana for Go! Go! Nippon! (2011)",
   "main": "src/main.cjs",
@@ -14,7 +14,7 @@
     "check:lifecycle": "node scripts/check-lifecycle.cjs",
     "package:win": "electron-builder --win dir --x64 --publish never",
     "package:release": "python3 scripts/package-release.py",
-    "package:dist": "electron-builder --win nsis 7z --x64 --publish never"
+    "package:dist": "node scripts/build-windows.cjs"
   },
   "dependencies": {
     "kuromoji": "0.1.2"
@@ -34,7 +34,8 @@
       "!node_modules/kuromoji/build/**/*",
       "!node_modules/kuromoji/demo/**/*",
       "!node_modules/kuromoji/example/**/*",
-      "!node_modules/kuromoji/test/**/*"
+      "!node_modules/kuromoji/test/**/*",
+      "!node_modules/zlibjs/bin/*dev*"
     ],
     "asarUnpack": [
       "node_modules/kuromoji/dict/**/*"
@@ -102,10 +103,7 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     },
-    "artifactName": "GoGoNippon-Study-${version}-Windows-x64-Portable.${ext}",
-    "toolsets": {
-      "wine": "1.0.1"
-    }
+    "artifactName": "GoGoNippon-Study-${version}-Windows-x64-Portable.${ext}"
   },
   "license": "GPL-3.0-or-later",
   "author": "Indrico",
